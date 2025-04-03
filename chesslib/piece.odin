@@ -19,7 +19,12 @@ PieceType :: enum {
 
 PieceColor :: enum {
     White = 0,
-    Black
+    Black,
+}
+
+PawnMoveDir :: enum {
+    Up = -1,
+    Down = 1,
 }
 
 char_to_piece :: proc(c: rune) -> (p: Piece, ok: bool) {
@@ -63,4 +68,16 @@ piece_to_char :: proc(p: Piece) -> (c: rune) {
             c = ' ';
     }
     return c;
+}
+
+is_pawn_start_row :: proc(board: ^Board, y: i8, color: PieceColor) -> bool {
+    return color == .White ? y == 6 : y == 1;
+}
+
+get_pawn_move_dir :: proc(color: PieceColor) -> PawnMoveDir {
+    return color == .White ? .Up : .Down;
+}
+
+is_piece_captureable :: proc(my_piece: Piece, enemy_piece: Piece) -> bool {
+    return my_piece.color != enemy_piece.color && enemy_piece.type != .Empty;
 }

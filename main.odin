@@ -11,4 +11,9 @@ main :: proc() {
         os.exit(-1);
     }
     chess.print_board(&board);
+    valid_moves := chess.get_valid_moves(&board);
+    for move in valid_moves {
+        fmt.println(move);
+    }
+    fmt.println("Movecount:", len(valid_moves));
 }
