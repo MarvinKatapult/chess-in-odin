@@ -53,7 +53,7 @@ print_board :: proc(board: ^Board) {
         fmt.println("");
     }
     fmt.println("-+--------")
-    fmt.println(" |ABCDEFGH")
+    fmt.println(" |abcdefgh")
 }
 
 play_move :: proc(board: ^Board, move: Move) -> (bool, MoveError) {
@@ -62,6 +62,7 @@ play_move :: proc(board: ^Board, move: Move) -> (bool, MoveError) {
     return ok, err;
 }
 
+@(private="file")
 play_valid_move :: proc(board: ^Board, move: Move) {
     board.field[move.y_to][move.x_to].piece = board.field[move.y_from][move.x_from].piece;
 }
