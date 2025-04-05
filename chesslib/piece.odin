@@ -2,9 +2,14 @@ package chess
 
 import "core:unicode"
 
+KING_START_X :: 4
+KING_START_Y_BLACK :: 7
+KING_START_Y_WHITE :: 0
+
 Piece :: struct {
     type: PieceType,
     color: PieceColor,
+    moved: bool,
 }
 
 PieceType :: enum {
@@ -22,6 +27,7 @@ PieceColor :: enum {
     Black,
 }
 
+@(private="file")
 PawnMoveDir :: enum {
     Up = -1,
     Down = 1,
@@ -71,7 +77,7 @@ piece_to_char :: proc(p: Piece) -> (c: rune) {
 }
 
 is_pawn_start_row :: proc(board: ^Board, y: i8, color: PieceColor) -> bool {
-    return color == .White ? y == 6 : y == 1;
+    return color == .White ? y == BOARD_HEIGHT - 1 : y == 1;
 }
 
 get_pawn_move_dir :: proc(color: PieceColor) -> PawnMoveDir {
