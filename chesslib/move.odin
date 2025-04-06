@@ -295,7 +295,6 @@ is_move_castling :: proc(board: ^Board, move: Move) -> bool {
     return moved_piece.type == .King && abs(move.x_to - move.x_from) == 2;
 }
 
-@(private="package")
 moves_contain_square_to :: proc(moves: []Move, x: i8, y: i8) -> (bool, ^Move) {
     for &move in moves {
         if move.x_to == x && move.y_to == y do return true, &move;
@@ -303,12 +302,18 @@ moves_contain_square_to :: proc(moves: []Move, x: i8, y: i8) -> (bool, ^Move) {
     return false, nil;
 }
 
-@(private="package")
 moves_contain_square_from :: proc(moves: []Move, x: i8, y: i8) -> (bool, ^Move) {
     for &move in moves {
         if move.x_from == x && move.y_from == y do return true, &move;
     }
     return false, nil;
+}
+
+moves_contain_move :: proc(moves: []Move, move: Move) -> bool {
+    for &move in moves {
+        if move == move do return true;
+    }
+    return false;
 }
 
 print_move_with_symbol :: proc(board: ^Board, move: Move) {
