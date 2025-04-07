@@ -20,12 +20,26 @@ get_piece_to_move :: proc(board: Board, move: Move) -> Piece {
     return board.field[move.y_from][move.x_from].piece;
 }
 
-get_valid_moves :: proc(board: ^Board, allocator := context.allocator) -> [dynamic]Move {
+get_valid_moves :: proc(board: ^Board, respect_check: bool = true, allocator := context.allocator) -> [dynamic]Move {
     moves := make([dynamic]Move, allocator);
 
     for y in 0..<BOARD_HEIGHT {
         for x in 0..<BOARD_WIDTH {
             get_valid_moves_for_square(board, i8(x), i8(y), &moves);
+            if respect_check {
+                for move, index in moves {
+                    fmt.println("Checking Check for move");
+                    print_move_with_symbol(board, move);
+                    temp_board: Board = board^;
+                    color_of_move := color_of_move(&temp_board, move);
+                    play_move(&temp_board, move);
+                    if color_of_move == color_in_check(&temp_board) {
+                        print_board(&temp_board);
+                        ordered_remove(&moves, index);
+                        fmt.println("REMOVED MOVE FOR CHECK");
+                    }
+                }
+            }
         }
     }
 
@@ -54,6 +68,19 @@ get_valid_moves_for_square :: proc(board: ^Board, x: i8, y: i8, moves: ^[dynamic
     }
 
     return;
+}
+
+color_of_move :: proc(board: ^Board, move: Move) -> PieceColor {
+    return board.field[move.y_from][move.x_from].piece.color;
+}
+
+color_in_check :: proc(board: ^Board) -> PieceColor {
+    moves := get_valid_moves(board, false);
+    defer delete(moves);
+    for move in moves {
+        if board.field[move.y_to][move.x_to].piece.type == .King do return color_of_move(board, move) == .White ? .Black : .White;
+    }
+    return nil;
 }
 
 @(private="file")
