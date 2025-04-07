@@ -25,47 +25,50 @@ get_valid_moves :: proc(board: ^Board, respect_check: bool = true, allocator := 
 
     for y in 0..<BOARD_HEIGHT {
         for x in 0..<BOARD_WIDTH {
-            get_valid_moves_for_square(board, i8(x), i8(y), &moves);
-            if respect_check {
-                for move, index in moves {
-                    fmt.println("Checking Check for move");
-                    print_move_with_symbol(board, move);
-                    temp_board: Board = board^;
-                    color_of_move := color_of_move(&temp_board, move);
-                    play_move(&temp_board, move);
-                    if color_of_move == color_in_check(&temp_board) {
-                        print_board(&temp_board);
-                        ordered_remove(&moves, index);
-                        fmt.println("REMOVED MOVE FOR CHECK");
-                    }
-                }
-            }
+            get_valid_moves_for_square(board, i8(x), i8(y), &moves, respect_check);
         }
     }
 
     return moves;
 }
 
-get_valid_moves_for_square :: proc(board: ^Board, x: i8, y: i8, moves: ^[dynamic]Move) {
+get_valid_moves_for_square :: proc(board: ^Board, x: i8, y: i8, moves: ^[dynamic]Move, respect_check: bool = true) {
     piece_type := board.field[y][x].piece.type;
     if piece_type == .Empty do return;
+
+    temp_moves: [dynamic]Move;
+    defer delete(temp_moves);
     
     switch piece_type {
         case .Pawn:
-            get_valid_moves_pawn(board, x, y, moves);
+            get_valid_moves_pawn(board, x, y, &temp_moves);
         case .Knight:
-            get_valid_moves_knight(board, x, y, moves);
+            get_valid_moves_knight(board, x, y, &temp_moves);
         case .Bishop:
-            get_valid_moves_bishop(board, x, y, moves);
+            get_valid_moves_bishop(board, x, y, &temp_moves);
         case .Rook:
-            get_valid_moves_rook(board, x, y, moves);
+            get_valid_moves_rook(board, x, y, &temp_moves);
         case .Queen:
-            get_valid_moves_queen(board, x, y, moves);
+            get_valid_moves_queen(board, x, y, &temp_moves);
         case .King:
-            get_valid_moves_king(board, x, y, moves);
+            get_valid_moves_king(board, x, y, &temp_moves);
         case .Empty:
             assert(false, "Unreachable Code");
     }
+
+    if respect_check {
+        #reverse for move, index in temp_moves {
+            temp_board: Board = board^;
+            color_of_move := color_of_move(&temp_board, move);
+            play_move(&temp_board, move);
+            in_check, color_in_check := color_in_check(&temp_board);
+            if in_check && color_of_move == color_in_check {
+                ordered_remove(&temp_moves, index);
+            }
+        }
+    }
+
+    append(moves, ..temp_moves[:]);
 
     return;
 }
@@ -74,13 +77,14 @@ color_of_move :: proc(board: ^Board, move: Move) -> PieceColor {
     return board.field[move.y_from][move.x_from].piece.color;
 }
 
-color_in_check :: proc(board: ^Board) -> PieceColor {
+color_in_check :: proc(board: ^Board) -> (in_check: bool, color: PieceColor) {
     moves := get_valid_moves(board, false);
     defer delete(moves);
     for move in moves {
-        if board.field[move.y_to][move.x_to].piece.type == .King do return color_of_move(board, move) == .White ? .Black : .White;
+        piece_to_move := board.field[move.y_to][move.x_to].piece;
+        if piece_to_move.type == .King do return true, color_of_move(board, move) == .White ? .Black : .White;
     }
-    return nil;
+    return false, .White;
 }
 
 @(private="file")

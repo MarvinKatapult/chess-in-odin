@@ -12,7 +12,7 @@ BLACK_BASE_LINE :: 0;
 
 FEN_START_POS :: "rnbkqrnb/pppppppp/8/8/8/8/PPPPPPPP/RNBKQRNB"
 FEN_TEST_POS :: "r1bqk2r/pp1nbppp/2p1pn2/3p4/3P1B2/2NBPN2/PPP2PPP/R2QK2R"
-FEN_TEST_POS2 :: "8/8/8/K7/8/n7/8/8"
+FEN_TEST_POS2 :: "8/8/8/K7/8/8/4b3/8"
 FEN_EMPTY :: "8/8/8/8/8/8/8/8"
 
 Board :: struct {
