@@ -11,8 +11,6 @@ main :: proc() {
         os.exit(-1);
     }
 
-    moves := chess.get_valid_moves(&board);
-    defer delete(moves);
-
+    chess.print_board_for_every_piece(&board);
     chess.print_board(&board);
 }
