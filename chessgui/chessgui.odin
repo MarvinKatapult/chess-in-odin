@@ -11,7 +11,11 @@ WINDOW_START_WIDTH :: 600;
 @(private="file")
 WINDOW_START_HEIGHT :: 600;
 
+SQUARE_SIZE :: WINDOW_START_WIDTH / chesslib.BOARD_WIDTH;
+
 board: chesslib.Board;
+valid_moves: [dynamic]chesslib.Move;
+turn: chesslib.PieceColor = .White;
 
 WR_TEXTURE: rl.Texture2D;
 BR_TEXTURE: rl.Texture2D;
@@ -26,35 +30,79 @@ BQ_TEXTURE: rl.Texture2D;
 WP_TEXTURE: rl.Texture2D;
 BP_TEXTURE: rl.Texture2D;
 
+SelectedSquare :: struct {
+    x: i8,
+    y: i8,
+}
+
+selected_square: SelectedSquare = {-1,-1};
+
 start_chess_game :: proc() {
 
-    load_textures();
     fmt.println("TEXTURES LOADED");
     defer unload_textures();
     chesslib.set_board(&board, chesslib.FEN_START_POS);
-    rl.SetTargetFPS(60);
     rl.InitWindow(WINDOW_START_WIDTH, WINDOW_START_HEIGHT, "Chess");
+    load_textures();
+    rl.SetTargetFPS(60);
     
     for !rl.WindowShouldClose() {
+        handle_input();
         rl.BeginDrawing();
             draw_board();
         rl.EndDrawing();
     }
 }
 
+@(private="file")
+handle_input :: proc() {
+    if rl.IsMouseButtonPressed(rl.MouseButton.LEFT) {
+
+        square := get_square_under_mouse();
+        contains, move := chesslib.moves_contain_square_to(valid_moves[:], square.x, square.y)
+        if contains {
+            chesslib.play_move(&board, move^);
+            clear(&valid_moves);
+            turn = turn == .White ? .Black : .White;
+            return;
+        }
+
+        piece  := board.field[square.y][square.x].piece;
+        if piece.color == turn {
+            clear(&valid_moves);
+            chesslib.get_valid_moves_for_square(&board, square.x, square.y, &valid_moves);
+        }
+    }
+}
+
+@(private="file")
+get_square_under_mouse :: proc() -> SelectedSquare {
+    return {i8(rl.GetMouseX() / SQUARE_SIZE), i8(rl.GetMouseY() / SQUARE_SIZE)};
+}
+
+@(private="file")
 load_textures :: proc() {
-    WR_TEXTURE = rl.LoadTexture("~/dev/odin/chess-in-odin/Chess_rlt60.png")
-    BR_TEXTURE = rl.LoadTexture("~/dev/odin/chess-in-odin/Chess_rdt60.png");
-    WK_TEXTURE = rl.LoadTexture("~/dev/odin/chess-in-odin/Chess_klt60.png");
-    BK_TEXTURE = rl.LoadTexture("~/dev/odin/chess-in-odin/Chess_kdt60.png");
-    WB_TEXTURE = rl.LoadTexture("~/dev/odin/chess-in-odin/Chess_blt60.png");
-    BB_TEXTURE = rl.LoadTexture("~/dev/odin/chess-in-odin/Chess_bdt60.png");
-    WN_TEXTURE = rl.LoadTexture("~/dev/odin/chess-in-odin/Chess_nlt60.png");
-    BN_TEXTURE = rl.LoadTexture("~/dev/odin/chess-in-odin/Chess_ndt60.png");
-    WQ_TEXTURE = rl.LoadTexture("~/dev/odin/chess-in-odin/Chess_qlt60.png");
-    BQ_TEXTURE = rl.LoadTexture("~/dev/odin/chess-in-odin/Chess_qdt60.png");
-    WP_TEXTURE = rl.LoadTexture("~/dev/odin/chess-in-odin/Chess_plt60.png");
-    BP_TEXTURE = rl.LoadTexture("~/dev/odin/chess-in-odin/Chess_pdt60.png");
+    load_texture("assets/Chess_plt60.png", &WP_TEXTURE);
+    load_texture("assets/Chess_pdt60.png", &BP_TEXTURE);
+    load_texture("assets/Chess_blt60.png", &WB_TEXTURE);
+    load_texture("assets/Chess_bdt60.png", &BB_TEXTURE);
+    load_texture("assets/Chess_nlt60.png", &WN_TEXTURE);
+    load_texture("assets/Chess_ndt60.png", &BN_TEXTURE);
+    load_texture("assets/Chess_rlt60.png", &WR_TEXTURE);
+    load_texture("assets/Chess_rdt60.png", &BR_TEXTURE);
+    load_texture("assets/Chess_qlt60.png", &WQ_TEXTURE);
+    load_texture("assets/Chess_qdt60.png", &BQ_TEXTURE);
+    load_texture("assets/Chess_klt60.png", &WK_TEXTURE);
+    load_texture("assets/Chess_kdt60.png", &BK_TEXTURE);
+}
+
+@(private="file")
+load_texture :: proc(path: cstring, var: ^rl.Texture) {
+    image: rl.Image = rl.LoadImage(path);
+    defer rl.UnloadImage(image);
+    if !rl.IsImageValid(image) do os.close(-1);
+    rl.ImageResize(&image, SQUARE_SIZE, SQUARE_SIZE);
+    var^ = rl.LoadTextureFromImage(image);
 }
 
 unload_textures :: proc() {
@@ -76,13 +124,13 @@ draw_board :: proc() {
     // Squares
     for y in 0..<chesslib.BOARD_HEIGHT {
         for x in 0..<chesslib.BOARD_WIDTH {
-            x_rect := i32(x) * rl.GetScreenWidth() / chesslib.BOARD_WIDTH;
-            y_rect := i32(y) * rl.GetScreenHeight() / chesslib.BOARD_HEIGHT;
+            x_rect := i32(x) * WINDOW_START_WIDTH / chesslib.BOARD_WIDTH;
+            y_rect := i32(y) * WINDOW_START_HEIGHT / chesslib.BOARD_HEIGHT;
             size_rect := rl.GetScreenWidth() / chesslib.BOARD_WIDTH;
-
-            color := (x % 2) == 0 ? rl.BLUE : rl.WHITE;
-            if y % 2 == 0 do color = (color == rl.BLUE ? rl.WHITE : rl.BLUE);
-
+    
+            color := (x % 2) == 0 ? rl.PINK : rl.WHITE;
+            if y % 2 == 0 do color = (color == rl.PINK ? rl.WHITE : rl.PINK);
+    
             rl.DrawRectangle(x_rect, y_rect, size_rect, size_rect, color);
         }
     }
@@ -91,27 +139,35 @@ draw_board :: proc() {
     for y in 0..<chesslib.BOARD_HEIGHT {
         for x in 0..<chesslib.BOARD_WIDTH {
             piece := board.field[y][x].piece;
-            text_rect: rl.Vector2 = {
-                f32(x) * f32(WINDOW_START_WIDTH) / f32(chesslib.BOARD_WIDTH), 
-                f32(y) * f32(WINDOW_START_HEIGHT) / f32(chesslib.BOARD_HEIGHT)
-            }
+            x_pos := i32(x) * SQUARE_SIZE;
+            y_pos := i32(y) * SQUARE_SIZE;
             switch piece.type {
                 case .Pawn:
-                    rl.DrawTextureV(piece.color == .White ? WP_TEXTURE : BP_TEXTURE, text_rect, rl.WHITE);
+                    texture := piece.color == .White ? WP_TEXTURE : BP_TEXTURE;
+                    rl.DrawTexture(texture, x_pos, y_pos, rl.WHITE);
                 case .Rook:
-                    rl.DrawTextureV(piece.color == .White ? WR_TEXTURE : BR_TEXTURE, text_rect, rl.WHITE);
+                    texture := piece.color == .White ? WR_TEXTURE : BR_TEXTURE;
+                    rl.DrawTexture(texture, x_pos, y_pos, rl.WHITE);
                 case .Bishop:
-                    rl.DrawTextureV(piece.color == .White ? WB_TEXTURE : BB_TEXTURE, text_rect, rl.WHITE);
+                    texture := piece.color == .White ? WB_TEXTURE : BB_TEXTURE;
+                    rl.DrawTexture(texture, x_pos, y_pos, rl.WHITE);
                 case .Knight:
-                    rl.DrawTextureV(piece.color == .White ? WN_TEXTURE : BN_TEXTURE, text_rect, rl.WHITE);
+                    texture := piece.color == .White ? WN_TEXTURE : BN_TEXTURE;
+                    rl.DrawTexture(texture, x_pos, y_pos, rl.WHITE);
                 case .Queen:
-                    rl.DrawTextureV(piece.color == .White ? WQ_TEXTURE : BQ_TEXTURE, text_rect, rl.WHITE);
+                    texture := piece.color == .White ? WQ_TEXTURE : BQ_TEXTURE;
+                    rl.DrawTexture(texture, x_pos, y_pos, rl.WHITE);
                 case .King:
-                    rl.DrawTextureV(piece.color == .White ? WK_TEXTURE : BK_TEXTURE, text_rect, rl.WHITE);
+                    texture := piece.color == .White ? WK_TEXTURE : BK_TEXTURE;
+                    rl.DrawTexture(texture, x_pos, y_pos, rl.WHITE);
                 case .Empty:
                     continue;
             }
-            fmt.println("Piece:", piece);
         }
+    }
+
+    // Valid Moves
+    for move in valid_moves {
+        rl.DrawCircle(i32(move.x_to) * SQUARE_SIZE + SQUARE_SIZE / 2, i32(move.y_to) * SQUARE_SIZE + SQUARE_SIZE / 2, 15, {55, 55, 55, 55});
     }
 }
