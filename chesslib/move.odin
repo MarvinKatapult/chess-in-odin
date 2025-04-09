@@ -1,7 +1,5 @@
 package chess
 
-import "core:fmt"
-
 Move :: struct {
     x_from: i8,
     y_from: i8,
@@ -101,16 +99,16 @@ get_valid_moves_pawn :: proc(board: ^Board, x: i8, y: i8, moves: ^[dynamic]Move)
     new_move.y_to = new_y;
     // Pawns can't capture pieces in front of them
     // That's why we check if the square we wan't to move to is also empty.
-    valid, _ := basic_is_move_valid(board, new_move);
-    if valid && board.field[new_y][x].piece.type == .Empty {
+    valid, capture := basic_is_move_valid(board, new_move);
+    if valid && !capture {
         append(moves, new_move);
 
         // Start Row
         if is_pawn_start_row(board, y, piece.color) {
             new_move.y_to += i8(move_direction);
             // Here again (Look above)
-            valid, _ = basic_is_move_valid(board, new_move);
-            if valid && board.field[new_y][x].piece.type == .Empty {
+            valid, capture = basic_is_move_valid(board, new_move);
+            if valid && !capture {
                 append(moves, new_move);
             }
         }
@@ -121,12 +119,11 @@ get_valid_moves_pawn :: proc(board: ^Board, x: i8, y: i8, moves: ^[dynamic]Move)
     new_move.y_from = y;
     new_move.y_to   = y + i8(move_direction);
 
-    new_move.x_to   = x - 1;
-    capture: bool;
+    new_move.x_to = x - 1;
     valid, capture = basic_is_move_valid(board, new_move)
     if valid && capture do append(moves, new_move);
 
-    new_move.x_to   = x + 1;
+    new_move.x_to = x + 1;
     valid, capture = basic_is_move_valid(board, new_move)
     if valid && capture do append(moves, new_move);
 
@@ -140,7 +137,7 @@ get_valid_moves_pawn :: proc(board: ^Board, x: i8, y: i8, moves: ^[dynamic]Move)
     was_last_move_enemy_pawn  := last_piece_moved.color != piece.color; 
     if !was_last_move_enemy_pawn do return;
 
-    is_enemy_pawn_neighbor := abs(board.last_move.x_to - x) == 1;
+    is_enemy_pawn_neighbor := abs(board.last_move.x_to - x) == 1 && board.last_move.y_to == y;
     if !is_enemy_pawn_neighbor do return;
 
     new_move.x_from = x;
@@ -216,8 +213,8 @@ get_valid_moves_king :: proc(board: ^Board, x: i8, y: i8, moves: ^[dynamic]Move)
         // Check if pieces are between them
         pieces: [3]Piece;
         pieces[0] = board.field[first_row][1].piece;
-        pieces[0] = board.field[first_row][2].piece;
-        pieces[0] = board.field[first_row][3].piece;
+        pieces[1] = board.field[first_row][2].piece;
+        pieces[2] = board.field[first_row][3].piece;
         if pieces[0].type == .Empty && pieces[1].type == .Empty && pieces[2].type == .Empty {
             move: Move;
             move.x_from = x;
@@ -349,5 +346,4 @@ moves_contain_move :: proc(moves: []Move, move: Move) -> bool {
 
 print_move_with_symbol :: proc(board: ^Board, move: Move) {
     symbol := piece_to_char(board.field[move.y_from][move.x_from].piece);
-    fmt.printfln("Move:[x_from:%d; y_from:%d; x_to:%d; y_to:%d; symbol:%c]", move.x_from, move.y_from, move.x_to, move.y_to, symbol);
 }

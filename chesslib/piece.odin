@@ -77,7 +77,7 @@ piece_to_char :: proc(p: Piece) -> (c: rune) {
 }
 
 is_pawn_start_row :: proc(board: ^Board, y: i8, color: PieceColor) -> bool {
-    return color == .White ? y == BOARD_HEIGHT - 1 : y == 1;
+    return color == .White ? y == 6 : y == 1;
 }
 
 get_pawn_move_dir :: proc(color: PieceColor) -> PawnMoveDir {

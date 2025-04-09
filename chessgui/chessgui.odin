@@ -12,10 +12,11 @@ WINDOW_START_WIDTH :: 600;
 WINDOW_START_HEIGHT :: 600;
 
 SQUARE_SIZE :: WINDOW_START_WIDTH / chesslib.BOARD_WIDTH;
+MOVE_CIRCLE_RADIUS :: 10
 
 board: chesslib.Board;
-valid_moves: [dynamic]chesslib.Move;
 turn: chesslib.PieceColor = .White;
+valid_moves: [dynamic]chesslib.Move;
 
 WR_TEXTURE: rl.Texture2D;
 BR_TEXTURE: rl.Texture2D;
@@ -52,6 +53,8 @@ start_chess_game :: proc() {
             draw_board();
         rl.EndDrawing();
     }
+
+    delete(valid_moves);
 }
 
 @(private="file")
@@ -168,6 +171,9 @@ draw_board :: proc() {
 
     // Valid Moves
     for move in valid_moves {
-        rl.DrawCircle(i32(move.x_to) * SQUARE_SIZE + SQUARE_SIZE / 2, i32(move.y_to) * SQUARE_SIZE + SQUARE_SIZE / 2, 15, {55, 55, 55, 55});
+        x_pos := i32(move.x_to) * SQUARE_SIZE + SQUARE_SIZE / 2;
+        y_pos := i32(move.y_to) * SQUARE_SIZE + SQUARE_SIZE / 2
+        color: rl.Color = board.field[move.y_to][move.x_to].piece.color == .Black ? {200, 200, 200, 55} : {55, 55, 55, 55};
+        rl.DrawCircle(x_pos, y_pos, MOVE_CIRCLE_RADIUS, color);
     }
 }
