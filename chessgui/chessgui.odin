@@ -17,6 +17,9 @@ MOVE_CIRCLE_RADIUS :: 10
 board: chesslib.Board;
 turn: chesslib.PieceColor = .White;
 valid_moves: [dynamic]chesslib.Move;
+show_promotion_screen: bool = false;
+square_of_piece_to_promote: SelectedSquare;
+promotion_screen: rl.Rectangle;
 
 WR_TEXTURE: rl.Texture2D;
 BR_TEXTURE: rl.Texture2D;
@@ -42,7 +45,7 @@ start_chess_game :: proc() {
 
     fmt.println("TEXTURES LOADED");
     defer unload_textures();
-    chesslib.set_board(&board, chesslib.FEN_START_POS);
+    chesslib.set_board(&board, chesslib.FEN_TEST_POS2);
     rl.InitWindow(WINDOW_START_WIDTH, WINDOW_START_HEIGHT, "Chess");
     load_textures();
     rl.SetTargetFPS(60);
@@ -51,6 +54,8 @@ start_chess_game :: proc() {
         handle_input();
         rl.BeginDrawing();
             draw_board();
+            if show_promotion_screen do draw_promotion_screen();
+
         rl.EndDrawing();
     }
 
@@ -62,8 +67,24 @@ handle_input :: proc() {
     if rl.IsMouseButtonPressed(rl.MouseButton.LEFT) {
 
         square := get_square_under_mouse();
+        if show_promotion_screen {
+            piece_index := square.x - i8(promotion_screen.x);
+            if piece_index >= 0 && piece_index < 4 && square.y == i8(promotion_screen.y) {
+                fmt.println("PieceIndex:", piece_index);
+                play_promotion_move(piece_index);
+                show_promotion_screen = false;
+                return;
+            }
+        }
+
         contains, move := chesslib.moves_contain_square_to(valid_moves[:], square.x, square.y)
         if contains {
+            if chesslib.is_move_promotion(&board, move^) {
+                show_promotion_screen = true;
+                square_of_piece_to_promote = square;
+                set_promotion_screen();
+                return;
+            }
             chesslib.play_move(&board, move^);
             clear(&valid_moves);
             turn = turn == .White ? .Black : .White;
@@ -76,6 +97,32 @@ handle_input :: proc() {
             chesslib.get_valid_moves_for_square(&board, square.x, square.y, &valid_moves);
         }
     }
+}
+
+@(private="file")
+play_promotion_move :: proc(piece_index: i8) {
+    move: chesslib.Move;
+    switch piece_index {
+        case 0:
+            move.promotion_piece.type = .Knight;
+        case 1:
+            move.promotion_piece.type = .Bishop;
+        case 2:
+            move.promotion_piece.type = .Rook;
+        case 3:
+            move.promotion_piece.type = .Queen;
+    }
+    move.promotion_piece.color = turn;
+    fmt.println("PromotionPiece:", move.promotion_piece);
+    move.x_from = square_of_piece_to_promote.x;
+    move.y_from = square_of_piece_to_promote.y - i8(chesslib.get_pawn_move_dir(turn));
+    move.x_to   = square_of_piece_to_promote.x;
+    move.y_to   = square_of_piece_to_promote.y;
+    fmt.println("Move:", move);
+    chesslib.play_move(&board, move);
+
+    turn = turn == .White ? .Black : .White;
+    clear(&valid_moves);
 }
 
 @(private="file")
@@ -103,7 +150,7 @@ load_textures :: proc() {
 load_texture :: proc(path: cstring, var: ^rl.Texture) {
     image: rl.Image = rl.LoadImage(path);
     defer rl.UnloadImage(image);
-    if !rl.IsImageValid(image) do os.close(-1);
+    if !rl.IsImageValid(image) do os.close(1);
     rl.ImageResize(&image, SQUARE_SIZE, SQUARE_SIZE);
     var^ = rl.LoadTextureFromImage(image);
 }
@@ -176,4 +223,17 @@ draw_board :: proc() {
         color: rl.Color = board.field[move.y_to][move.x_to].piece.color == .Black ? {200, 200, 200, 55} : {55, 55, 55, 55};
         rl.DrawCircle(x_pos, y_pos, MOVE_CIRCLE_RADIUS, color);
     }
+}
+
+draw_promotion_screen :: proc() {
+    rl.DrawRectangleRec(promotion_screen, rl.WHITE);
+    rl.DrawTexture(turn == .White ? WN_TEXTURE : BN_TEXTURE, i32(selected_square.x), i32(selected_square.y), rl.WHITE);
+    rl.DrawTexture(turn == .White ? WB_TEXTURE : BB_TEXTURE, i32(selected_square.x) + SQUARE_SIZE, i32(selected_square.y), rl.WHITE);
+    rl.DrawTexture(turn == .White ? WR_TEXTURE : BR_TEXTURE, i32(selected_square.x) + SQUARE_SIZE * 2, i32(selected_square.y), rl.WHITE);
+    rl.DrawTexture(turn == .White ? WQ_TEXTURE : BQ_TEXTURE, i32(selected_square.x) + SQUARE_SIZE * 3, i32(selected_square.y), rl.WHITE);
+}
+
+
+set_promotion_screen :: proc() {
+    promotion_screen = {1 + f32(selected_square.x), 1 + f32(selected_square.y), SQUARE_SIZE * 4, SQUARE_SIZE}
 }

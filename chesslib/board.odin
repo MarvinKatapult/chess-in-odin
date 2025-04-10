@@ -12,7 +12,7 @@ BLACK_BASE_LINE :: 0;
 
 FEN_START_POS :: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
 FEN_TEST_POS :: "r1bqk2r/pp1nbppp/2p1pn2/3p4/3P1B2/2NBPN2/PPP2PPP/R2QK2R"
-FEN_TEST_POS2 :: "r3k2r/8/8/8/8/8/8/R3K2R"
+FEN_TEST_POS2 :: "8/P6P/8/8/8/8/p6p/8"
 FEN_EMPTY :: "8/8/8/8/8/8/8/8"
 
 Board :: struct {
@@ -141,6 +141,9 @@ play_move :: proc(board: ^Board, valid_move: Move) {
         rook_move.y_from = valid_move.y_from;
         rook_move.y_to   = valid_move.y_from;
         play_move(board, rook_move);
+    }
+    if is_move_promotion(board, valid_move) {
+        square_to.piece = valid_move.promotion_piece;
     }
     square_from.piece.type = .Empty;
 

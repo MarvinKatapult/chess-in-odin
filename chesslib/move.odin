@@ -1,6 +1,7 @@
 package chess
 
 Move :: struct {
+    promotion_piece: Piece,
     x_from: i8,
     y_from: i8,
     x_to: i8,
@@ -316,6 +317,11 @@ is_move_en_passant :: proc(board: ^Board, move: Move) -> bool {
     if moved_piece.type != .Pawn do return false;
     
     return move.x_from != move.x_to && square_to.piece.type == .Empty;
+}
+
+is_move_promotion :: proc(board: ^Board, move: Move) -> bool {
+    piece := board.field[move.y_from][move.x_from].piece;
+    return piece.type == .Pawn && (move.y_to == WHITE_BASE_LINE || move.y_to == BLACK_BASE_LINE);
 }
 
 is_move_castling :: proc(board: ^Board, move: Move) -> bool {
