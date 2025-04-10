@@ -45,7 +45,7 @@ start_chess_game :: proc() {
 
     fmt.println("TEXTURES LOADED");
     defer unload_textures();
-    chesslib.set_board(&board, chesslib.FEN_TEST_POS2);
+    chesslib.set_board(&board, chesslib.FEN_START_POS);
     rl.InitWindow(WINDOW_START_WIDTH, WINDOW_START_HEIGHT, "Chess");
     load_textures();
     rl.SetTargetFPS(60);
@@ -55,6 +55,10 @@ start_chess_game :: proc() {
         rl.BeginDrawing();
             draw_board();
             if show_promotion_screen do draw_promotion_screen();
+            checkmate, color := chesslib.is_checkmate(&board);
+            if checkmate {
+                fmt.println(color, " is checkmate.")
+            }
 
         rl.EndDrawing();
     }

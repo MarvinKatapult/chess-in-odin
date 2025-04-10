@@ -353,3 +353,12 @@ moves_contain_move :: proc(moves: []Move, move: Move) -> bool {
 print_move_with_symbol :: proc(board: ^Board, move: Move) {
     symbol := piece_to_char(board.field[move.y_from][move.x_from].piece);
 }
+
+get_moves_for_color :: proc(board: ^Board, moves: []Move, color: PieceColor) -> (moves_for_color: [dynamic]Move) {
+    for move in moves {
+        if board.field[move.y_from][move.x_from].piece.color == color {
+            append(&moves_for_color, move);
+        }
+    }
+    return moves_for_color;
+}

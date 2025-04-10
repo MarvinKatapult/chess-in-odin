@@ -154,3 +154,18 @@ play_move :: proc(board: ^Board, valid_move: Move) {
 is_in_bounds :: proc(x: i8) -> bool {
     return x >= 0 && x < BOARD_WIDTH;
 }
+
+is_checkmate :: proc(board: ^Board) -> (bool, PieceColor) {
+    moves := get_valid_moves(board);
+    white_moves := get_moves_for_color(board, moves[:], .White);
+    black_moves := get_moves_for_color(board, moves[:], .Black);
+    defer delete(moves);
+    defer delete(white_moves);
+    defer delete(black_moves);
+
+    in_check, color_in_check := color_in_check(board);
+    if !in_check do return false, .White;
+    if len(white_moves) == 0 && color_in_check == .White do return true, .White;
+    if len(black_moves) == 0 && color_in_check == .Black do return true, .Black;
+    return false, .White;
+}
